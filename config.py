@@ -12,16 +12,15 @@ SUBREDDIT_NAME = os.environ.get('SUBREDDIT_NAME', 'writingprompts')
 # PRAW Constants
 REDDIT_USERNAME = os.environ.get('REDDIT_USERNAME')
 REDDIT_PASSWORD = os.environ.get('REDDIT_PASSWORD')
-REDDIT_APP_ID = os.environ.get('APP_ID')
-REDDIT_APP_SECRET = os.environ.get('APP_SECRET')
+REDDIT_APP_ID = os.environ.get('REDDIT_APP_ID')
+REDDIT_APP_SECRET = os.environ.get('REDDIT_APP_SECRET')
 
 
 FIREBASE_AUTH = {
     "apiKey": os.environ.get('FIREBASE_APIKEY'),
-    "authDomain": os.environ.get('FIREBASE_AUTHDOMAIN'),
-    "databaseURL": os.environ.get('FIREBASE_DATABASEURL'),
-    "projectId": os.environ.get('FIREBASE_PROJECTID'),
-    "storageBucket": os.environ.get('FIREBASE_STORAGEBUCKET'),
-    "messagingSenderId": os.environ.get('FIREBASE_MESSAGESENDERID'),
-    "serviceAccount": os.environ.get('FIREBASE_SERVICEACCOUNT')
+    "authDomain": "storiesapp-d6e91.firebaseapp.com",
+    "databaseURL": "https://storiesapp-d6e91.firebaseio.com",
+    "projectId": "storiesapp-d6e91",
+    "storageBucket": "storiesapp-d6e91.appspot.com",
+    "messagingSenderId": "55794856298"
 }
