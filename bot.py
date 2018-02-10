@@ -2,12 +2,22 @@ import config
 import requests
 import praw
 import pyrebase
+import argparse
+from datetime import datetime
+
+def past_week_utc():
+    dt = datetime.today() 
+    return dt.timestamp() - 608400
 
 def firebase_login():
     return pyrebase.initialize_app(config.FIREBASE_AUTH)
 
-
 def get_subreddit_data():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--startTime', default=past_week_utc())
+    parser.add_argument('-e', '--endTime', default=None)
+    args = parser.parse_args()
 
     reddit = praw.Reddit(client_id=config.REDDIT_APP_ID, client_secret=config.REDDIT_APP_SECRET,
                          user_agent=config.USER_AGENT, username=config.REDDIT_USERNAME,
@@ -15,7 +25,7 @@ def get_subreddit_data():
 
     subreddit = reddit.subreddit(config.SUBREDDIT_NAME)
 
-    for submission in subreddit.submissions(config.START_RANGE, config.END_RANGE):
+    for submission in subreddit.submissions(args.startTime, args.endTime):
 
         post_id = submission.id
 
