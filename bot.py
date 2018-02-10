@@ -3,25 +3,6 @@ import requests
 import praw
 import pyrebase
 
-def load_log():
-    """Loads the csv file and return a list of Reddit posts id's."""
-
-    try:
-        with open(config.LOG_FILE, "r", newline="") as csv_contents:
-            return [item[0] for item in csv.reader(csv_contents)]
-    except FileNotFoundError:
-        with open(config.LOG_FILE, "w", newline="") as temp_contents:
-            return []
-
-
-def save_log(post_id):
-    """Updates the csv file with the processed Reddit post id."""
-
-    with open(config.LOG_FILE, "a", newline="") as csv_contents:
-        csv_writer = csv.writer(csv_contents)
-        csv_writer.writerow([post_id])
-
-
 def firebase_login():
     return pyrebase.initialize_app(config.FIREBASE_AUTH)
 
@@ -93,5 +74,4 @@ def save_to_firebase(subreddit_data):
 
 if __name__ == "__main__":
     FIREBASE = firebase_login()
-    SAVED_POSTS = load_log()
     get_subreddit_data()
