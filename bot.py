@@ -1,6 +1,5 @@
 import config
 import requests
-import csv
 import praw
 import pyrebase
 
