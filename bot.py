@@ -2,7 +2,7 @@ import config
 import requests
 import csv
 import praw
-
+import pyrebase
 
 def load_log():
     """Loads the csv file and return a list of Reddit posts id's."""
@@ -24,30 +24,12 @@ def save_log(post_id):
 
 
 def firebase_login():
-    """Logins the user to your Firebase database."""
-
-    base_url = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key={0}".format(
-        config.FIREBASE_APIKEY)
-
-    credentials = dict()
-    credentials["email"] = config.FIREBASE_EMAIL
-    credentials["password"] = config.FIREBASE_PASSWORD
-    credentials["returnSecureToken"] = True
-
-    with requests.post(base_url, json=credentials) as login_response:
-
-        # IF the login was successful we return the 'idToken', else we exit the program.
-        if login_response.status_code == 200:
-            print("Sucessfully logged to Firebase.")
-            return login_response.json()["idToken"]
-        else:
-            print("Failed Login:", login_response.json()["error"]["message"])
-            quit()
+    return pyrebase.initialize_app(config.FIREBASE_AUTH)
 
 
 def get_subreddit_data():
 
-    reddit = praw.Reddit(client_id=config.APP_ID, client_secret=config.APP_SECRET,
+    reddit = praw.Reddit(client_id=config.REDDIT_APP_ID, client_secret=config.REDDIT_APP_SECRET,
                          user_agent=config.USER_AGENT, username=config.REDDIT_USERNAME,
                          password=config.REDDIT_PASSWORD)
 
@@ -57,7 +39,7 @@ def get_subreddit_data():
 
         post_id = submission.id
 
-        if post_id not in SAVED_POSTS and submission.score >= config.MIN_UPVOTES:
+        if submission.score >= config.MIN_UPVOTES:
 
             list_of_valid_comments = [comment for comment in submission.comments if (
                 hasattr(comment, "body") and comment.distinguished == None)]
@@ -68,16 +50,17 @@ def get_subreddit_data():
 
                 # Sometimes the top comment is deleted.
                 try:
-                    temp_dict = dict()
-                    temp_dict["post_title"] = submission.title
-                    temp_dict["post_author"] = submission.author.name
-                    temp_dict["top_comment"] = top_comment.body
-                    temp_dict["top_comment_author"] = top_comment.author.name
-                    temp_dict["post_date"] = submission.created_utc
-                    temp_dict["unique_id"] = submission.id
-                    temp_dict["reddit_url"] = submission.url
+                    data = {
+                        "post_title": submission.title,
+                        "post_author": submission.author.name,
+                        "top_comment": top_comment.body,
+                        "top_comment_author": top_comment.author.name,
+                        "post_date": submission.created_utc,
+                        "unique_id": submission.id,
+                        "reddit_url": submission.url
+                    }
 
-                    save_to_firebase(temp_dict)
+                    save_to_firebase(data)
 
                 except AttributeError:
                     pass
@@ -86,32 +69,30 @@ def get_subreddit_data():
                 print("Skipping post ID:", post_id, "not enough comments.")
 
         else:
-            print("Skipping post ID:", post_id, "already saved.")
+            print("Skipping post ID:", post_id, "upvote requirment not met.")
 
 
 def save_to_firebase(subreddit_data):
     """
-    Saves the repository data to the specified Firebase node.
-    We use the repo name as its id for the Firebase database.
+    Saves the repository data to the specified Firebase.
+    Use the SUBREDDIT_NAME as the name of the table.
     """
 
-    base_url = "https://{}.firebaseio.com/{}.json?auth={}".format(
-        config.FIREBASE_PROJECTID, config.FIREBASE_NODE, AUTH_TOKEN)
+    db = FIREBASE.database()
 
-    # We use the PATCH verb and send the data as a JSON string.
-    with requests.post(base_url, json=subreddit_data) as response:
+    # Check if post already exists
+    duplicate = db.child(config.SUBREDDIT_NAME).order_by_child(
+        "unique_id").equal_to(subreddit_data["unique_id"]).get()
 
-        # We now determine the status of the operation.
-        if response.status_code == 200:
-            print("Added {} with id: {}".format(
-                subreddit_data["post_title"], subreddit_data["unique_id"]))
-            save_log(subreddit_data["unique_id"])
-        else:
-            print(response.json()["error"])
+    if len(duplicate.each()) < 1:
+        response = db.child(config.SUBREDDIT_NAME).push(subreddit_data)
+        print("Added {} with id: {}".format(subreddit_data["post_title"], subreddit_data["unique_id"]))
+    else:
+        print("Skipping post ID:",
+              subreddit_data["unique_id"], "already saved.")
 
 
 if __name__ == "__main__":
-
-    AUTH_TOKEN = firebase_login()
+    FIREBASE = firebase_login()
     SAVED_POSTS = load_log()
     get_subreddit_data()
