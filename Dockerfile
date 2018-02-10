@@ -1,5 +1,6 @@
 FROM python:3
 
+ADD config.py /
 ADD bot.py /
 
 RUN pip install requests praw pyrebase
