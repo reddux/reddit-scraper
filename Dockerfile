@@ -8,5 +8,3 @@ RUN pip install requests praw pyrebase
 
 # Cron
 ADD run.sh /etc/cron.hourly/reddit-scraper
-
-CMD [ "/bin/sh", "./run.sh" ]
